@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.ipynb_checkpoints/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Office temp files
+~$*
+*.tmp
+
+# Large output (keep CSV results, ignore images)
+输出结果/**/*.png
+*.xlsx
+output/
+results/

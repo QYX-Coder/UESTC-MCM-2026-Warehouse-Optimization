@@ -1,0 +1,21 @@
+# 核心数值计算
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+
+# 优化求解器（按需选用）
+# pulp>=2.7.0          # 开源线性规划
+# ortools>=9.7.0       # Google OR-Tools
+# gurobipy>=10.0.0     # Gurobi商业求解器
+
+# 可视化
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# 文件读写
+openpyxl>=3.1.0
+python-docx>=0.8.11
+
+# 开发辅助
+ipython>=8.0.0
+jupyter>=1.0.0
