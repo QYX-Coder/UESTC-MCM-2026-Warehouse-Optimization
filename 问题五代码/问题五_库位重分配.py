@@ -887,14 +887,65 @@ if exact_rate > REORG_THRESHOLD:
         reorg_df.to_csv(os.path.join(CSV_DIR, '整理操作明细.csv'), index=False, encoding='utf-8-sig')
         print(f"\n  整理操作明细: {len(reorg_df)}条")
 
-    # Save Scenario B CSVs (post-reorg warehouse state)
-    # Re-write CSVs with reorg
-    save_csvs(cranes, '整理_', CSV_DIR)
+    # Save Scenario B: reorganized warehouse state + comparison
+    reorg_occupied_rows = []
+    for key, mat in sorted(occupied.items(), key=lambda x: (x[0][0], x[0][1], x[0][2])):
+        reorg_occupied_rows.append({
+            '货架(y)': key[0], '层(z)': key[1], '列(x)': key[2],
+            '深浅位': slot_rev[key[3]], '原材料编号': mat,
+            '箱子类型': box_type_map.get(mat, 'E3'),
+            '物理距离(mm)': phys_dist(key)
+        })
+    reorg_occ_df = pd.DataFrame(reorg_occupied_rows)
+    reorg_occ_df.to_csv(os.path.join(CSV_DIR, '整理后_库位分配方案.csv'), index=False, encoding='utf-8-sig')
+    print(f"  整理后库位分配方案: {len(reorg_occ_df)}条")
+
+    # Comparison summary
+    comp_rows = [{
+        '指标': '总流动时间(s)', '不整理': stats['total_flow'],
+        '整理(含整理耗时)': stats['total_flow'] + reorg_makespan,
+        '整理耗时(s)': reorg_makespan
+    }, {
+        '指标': '平均出库流动时间(s)', '不整理': stats['avg_ob_flow'],
+        '整理(含整理耗时)': stats['avg_ob_flow'] + reorg_makespan / stats['total_ob'] if stats['total_ob'] > 0 else 0,
+        '整理耗时(s)': reorg_makespan
+    }, {
+        '指标': '平均入库流动时间(s)', '不整理': stats['avg_ib_flow'],
+        '整理(含整理耗时)': stats['avg_ib_flow'] + reorg_makespan / stats['total_ib'] if stats['total_ib'] > 0 else 0,
+        '整理耗时(s)': reorg_makespan
+    }, {
+        '指标': '整理前精确偏离率', '不整理': exact_rate,
+        '整理(含整理耗时)': exact_rate2,
+        '整理耗时(s)': reorg_makespan
+    }, {
+        '指标': '整理前严重偏离率', '不整理': severe_rate,
+        '整理(含整理耗时)': severe_rate2,
+        '整理耗时(s)': reorg_makespan
+    }, {
+        '指标': '平均物理距离(mm)', '不整理': avg_cur,
+        '整理(含整理耗时)': avg_opt,
+        '整理耗时(s)': reorg_makespan
+    }, {
+        '指标': '移动箱数', '不整理': 0,
+        '整理(含整理耗时)': len(moves),
+        '整理耗时(s)': reorg_makespan
+    }]
+    comp_df = pd.DataFrame(comp_rows)
+    comp_df.to_csv(os.path.join(CSV_DIR, '整理vs不整理_对比表.csv'), index=False, encoding='utf-8-sig')
+    print("  整理vs不整理对比表 已保存")
 
 else:
     print(f"\n精确偏离度{exact_rate*100:.1f}% 未达阈值{REORG_THRESHOLD*100:.0f}%，无需整理")
     reorg_makespan = 0
     reorg_timeline = []
+    # Also save comparison for no-reorg case
+    comp_rows = [{
+        '指标': '总流动时间(s)', '不整理': stats['total_flow'],
+        '整理(含整理耗时)': stats['total_flow'],
+        '整理耗时(s)': 0
+    }]
+    comp_df = pd.DataFrame(comp_rows)
+    comp_df.to_csv(os.path.join(CSV_DIR, '整理vs不整理_对比表.csv'), index=False, encoding='utf-8-sig')
 
 
 # ============ Visualization ============
@@ -1103,6 +1154,16 @@ nc = int(csv_tl[['堆垛机编号', '开始时刻(s)', '完成时刻(s)', '操�
 c9 = (nc == 0)
 print(f"  空值: {nc}行 {'PASS' if c9 else 'FAIL'}")
 checks_pass += int(c9); checks_total += 1
+# Check new comparison file exists and has content
+comp_path = os.path.join(CSV_DIR, '整理vs不整理_对比表.csv')
+c10 = os.path.exists(comp_path) and os.path.getsize(comp_path) > 100
+print(f"  对比表存在: {'PASS' if c10 else 'FAIL'}")
+checks_pass += int(c10); checks_total += 1
+if exact_rate > REORG_THRESHOLD:
+    reorg_path = os.path.join(CSV_DIR, '整理后_库位分配方案.csv')
+    c11 = os.path.exists(reorg_path) and os.path.getsize(reorg_path) > 1000
+    print(f"  整理后库位方案存在: {'PASS' if c11 else 'FAIL'}")
+    checks_pass += int(c11); checks_total += 1
 
 print(f"\n  总计: {checks_pass}/{checks_total} 通过")
 print(f"  {'*** 全部验证通过! ***' if checks_pass == checks_total else '*** 存在失败项 ***'}")
