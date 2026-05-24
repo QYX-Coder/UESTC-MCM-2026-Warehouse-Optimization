@@ -21,6 +21,7 @@ CSV_DIR = os.path.join(OUT_DIR, '调度结果CSV')
 df_s = pd.read_csv(os.path.join(CSV_DIR, 'SPT调度结果.csv'))
 df_f = pd.read_csv(os.path.join(CSV_DIR, 'FIFO调度结果.csv'))
 df_p = pd.read_csv(os.path.join(CSV_DIR, 'Priority调度结果.csv'))
+df_sens = pd.read_csv(os.path.join(CSV_DIR, '速度灵敏度数据.csv'))
 
 fig, axes = plt.subplots(2, 2, figsize=(18, 14))
 
